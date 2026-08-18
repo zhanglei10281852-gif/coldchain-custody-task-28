@@ -18,15 +18,6 @@ func (s JobStatus) IsTerminal() bool {
 
 func (s JobStatus) CanRetry() bool { return s == JobPending || s == JobFailed }
 
-func (s JobStatus) IsClaimable() bool {
-	switch s {
-	case JobPending, JobFailed, JobRunning:
-		return true
-	default:
-		return false
-	}
-}
-
 type OutboxJob struct {
 	ID          string
 	Kind        string

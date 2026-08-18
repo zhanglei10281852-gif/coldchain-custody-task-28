@@ -21,7 +21,7 @@ func (q *queries) InsertJob(ctx context.Context, job domain.OutboxJob) error {
 func (q *queries) ClaimJobs(ctx context.Context, now time.Time, limit int) ([]domain.OutboxJob, error) {
 	rows, err := q.q.QueryContext(ctx, `SELECT id, kind, aggregate_id, payload, status, attempts, max_attempts,
         available_at, locked_at, last_error, created_at, updated_at FROM outbox_jobs
-        WHERE status IN ('pending', 'failed', 'running') AND available_at <= ? ORDER BY created_at ASC LIMIT ?`, formatTime(now), limit)
+        WHERE status IN ('pending', 'failed') AND available_at <= ? ORDER BY created_at ASC LIMIT ?`, formatTime(now), limit)
 	if err != nil {
 		return nil, translateError("select outbox jobs", err)
 	}
@@ -40,7 +40,7 @@ func (q *queries) ClaimJobs(ctx context.Context, now time.Time, limit int) ([]do
 	claimed := make([]domain.OutboxJob, 0, len(jobs))
 	for _, job := range jobs {
 		result, err := q.q.ExecContext(ctx, `UPDATE outbox_jobs SET status = 'running', attempts = attempts + 1,
-            locked_at = ?, updated_at = ? WHERE id = ? AND status IN ('pending', 'failed', 'running')`, formatTime(now), formatTime(now), job.ID)
+            locked_at = ?, updated_at = ? WHERE id = ? AND status IN ('pending', 'failed')`, formatTime(now), formatTime(now), job.ID)
 		if err != nil {
 			return nil, translateError("claim outbox job", err)
 		}
